@@ -13,8 +13,35 @@
 
   info.style.display = 'none';
   replay.style.display = 'none';
-  
 
+
+  class Quiz {
+    constructor(quizData) {
+      this._quizzes = quizData.results;
+    }
+  
+    //Get API data elements
+    getQuizCategory(index) {
+      return this._quizzes[index].category;
+    }
+  
+    getQuizDifficulty(index) {
+      return this._quizzes[index].difficulty;
+    }
+  
+    getQuizQuestion(index) {
+      return this._quizzes[index].question;
+    }
+
+    getQuizCorrectAnswer(index) {
+      return this._quizzes[index].correct_answer;
+    }
+
+    getQuizIncorrectAnswers(index) {
+      return this._quizzes[index].incorrect_answers;
+    }
+  }
+  
   // 正誤判定＆得点機能
   const checkAnswer = (value, correctAnswer) => {
     if (value === correctAnswer) {
@@ -35,26 +62,25 @@
   }
 
   // クイズセット機能
-  const quizeSet = async (quizes) => {
+  const quizeSet = quiz => {
 
     info.style.display = 'block';
 
-    const quize = quizes[currentNum];
-    const correctAnswer = quize.correct_answer;
-    const incorrectAnswers = quize.incorrect_answers;
+    const correctAnswer = quiz.getQuizCorrectAnswer(currentNum);
+    const incorrectAnswers = quiz.getQuizIncorrectAnswers(currentNum);
 
     // 問題を表示
     title.textContent = `問題${currentNum + 1}`;
-    genre.textContent = quize.category;
-    difficulty.textContent = quize.difficulty;
-    question.textContent = quize.question;
+    genre.textContent = quiz.getQuizCategory(currentNum);
+    difficulty.textContent = quiz.getQuizDifficulty(currentNum);
+    question.textContent = quiz.getQuizQuestion(currentNum);
 
     // 選択肢作成・表示
-    setAnswers(quizes, correctAnswer, incorrectAnswers);
+    setAnswers(quiz, correctAnswer, incorrectAnswers);
   }
 
   // 選択肢作成・表示機能
-  const setAnswers = (quizes, correctAnswer, incorrectAnswers) => {
+  const setAnswers = (quiz, correctAnswer, incorrectAnswers) => {
     const answers = [];
 
     answers.push(correctAnswer);
@@ -95,7 +121,7 @@
           return;
 
         } else {
-          quizeSet(quizes);
+          quizeSet(quiz);
         }
 
       });
@@ -104,18 +130,26 @@
 
   // 開始ボタン発火
   start.addEventListener('click', async () => {
-
+    
     // 開始ボタンを押してから非同期処理が終了するまで、取得中画面を表示
     start.style.display = 'none';
     title.textContent = '取得中';
     question.textContent = '少々お待ちください';
 
     // 非同期処理により、クイズデータを取得する
-    const res = await fetch('https://opentdb.com/api.php?amount=10&type=multiple');
-    const contents = await res.json();
-    const quizes = contents.results;
+    try {
+      const res = await fetch('https://opentdb.com/api.php?amount=10&type=multiple');
+      const quizData = await res.json();
+      
+      const quiz = new Quiz(quizData);
 
-    quizeSet(quizes);
+      quizeSet(quiz);
+
+    } catch(err) {
+      // fetch と res.json 両方のエラーをキャッチ
+      alert(err);
+      location.reload();
+    }
   });
 
   replay.addEventListener('click', () => {
